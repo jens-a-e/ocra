@@ -9,6 +9,8 @@
 #include <string.h>
 #include <tchar.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <wchar.h>
 
 const BYTE Signature[] = { 0x41, 0xb6, 0xba, 0x4e };
 
@@ -246,37 +248,50 @@ BOOL OpCreateInstDirectory(LPVOID* p)
       GetTempPath(MAX_PATH, TempPath);
    }
 
-  // ocra original: create unique tmp folder every time
+   // ocra original: create unique tmp folder every time
    // UINT tempResult = GetTempFileName(TempPath, _T("ocrastub"), 0, InstDir);
-   
+   // if (tempResult == 0u)
+   // {
+   //    FATAL("Failed to get temp file name.");
+   //    return FALSE;
+   // }
+  
    // Name the tmp folder after the executable
-   TCHAR TmpFolderName = PathFindFileName(ImageFileName);
-   PathRemoveExtension(TmpFolderName);
-   
-   UINT tempResult = GetTempFileName(TempPath, _T(TmpFolderName), 1, InstDir);
-   if (tempResult == 0u)
+   TCHAR   szDir[_MAX_DIR]     = { 0 };
+   TCHAR   szFname[_MAX_FNAME] = { 0 };
+   TCHAR   szExt[_MAX_EXT]     = { 0 };
+   _splitpath( ImageFileName, NULL, szDir, szFname, szExt);
+   if( szFname == NULL )
    {
-      FATAL("Failed to get temp file name.");
-      return FALSE;
+    FATAL("Error splitting path.");
+    return FALSE;
    }
+
+   lstrcat(TempPath, "\\");
+   lstrcat(TempPath, szFname);
+   lstrcpy(InstDir,TempPath);
 
    DEBUG("Creating installation directory: '%s'", InstDir);
 
    /* Attempt to delete the temp file created by GetTempFileName.
       Ignore errors, i.e. if it doesn't exist. */
-   (void)DeleteFile(InstDir);
+   // (void)DeleteFile(InstDir);
 
-   if (!CreateDirectory(InstDir, NULL))
-   {
-      FATAL("Failed to create installation directory.");
-      return FALSE;
-   }
+   // if (!CreateDirectory(InstDir, NULL))
+   // {
+   //    FATAL("Failed to create installation directory.");
+   //    return FALSE;
+   // }
+
+   // New: Create the InstDir, but suppress errors (already exists).
+   (void)CreateDirectory(InstDir, NULL);
+
    return TRUE;
 }
 
 int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
-   DeleteOldFiles();
+   // DeleteOldFiles();
 
    /* Find name of image */
    if (!GetModuleFileName(NULL, ImageFileName, MAX_PATH))
@@ -356,16 +371,16 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
       CreateAndWaitForProcess(PostCreateProcess_ApplicationName, PostCreateProcess_CommandLine);
    }
 
-   if (DeleteInstDirEnabled)
-   {
-      DEBUG("Deleting temporary installation directory %s", InstDir);
-      TCHAR SystemDirectory[MAX_PATH];
-      if (GetSystemDirectory(SystemDirectory, MAX_PATH) > 0)
-         SetCurrentDirectory(SystemDirectory);
-      else
-         SetCurrentDirectory("C:\\");
-      DeleteRecursivelyNowOrLater(InstDir);
-   }
+   // if (DeleteInstDirEnabled)
+   // {
+   //    DEBUG("Deleting temporary installation directory %s", InstDir);
+   //    TCHAR SystemDirectory[MAX_PATH];
+   //    if (GetSystemDirectory(SystemDirectory, MAX_PATH) > 0)
+   //       SetCurrentDirectory(SystemDirectory);
+   //    else
+   //       SetCurrentDirectory("C:\\");
+   //    DeleteRecursivelyNowOrLater(InstDir);
+   // }
 
    ExitProcess(ExitStatus);
 
