@@ -246,7 +246,14 @@ BOOL OpCreateInstDirectory(LPVOID* p)
       GetTempPath(MAX_PATH, TempPath);
    }
 
-   UINT tempResult = GetTempFileName(TempPath, _T("ocrastub"), 0, InstDir);
+  // ocra original: create unique tmp folder every time
+   // UINT tempResult = GetTempFileName(TempPath, _T("ocrastub"), 0, InstDir);
+   
+   // Name the tmp folder after the executable
+   TCHAR TmpFolderName = PathFindFileName(ImageFileName);
+   PathRemoveExtension(TmpFolderName);
+   
+   UINT tempResult = GetTempFileName(TempPath, _T(TmpFolderName), 1, InstDir);
    if (tempResult == 0u)
    {
       FATAL("Failed to get temp file name.");
